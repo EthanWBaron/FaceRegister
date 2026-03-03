@@ -23,8 +23,8 @@ fun FaceOverlay(
 ) {
     val textPaint = remember {
         android.graphics.Paint().apply {
-            color = android.graphics.Color.GREEN
             textSize = 48f
+            isFakeBoldText = true
         }
     }
 
@@ -39,22 +39,25 @@ fun FaceOverlay(
                 isFrontCamera
             )
 
+            val isUnknown = label == null || label == "Unknown"
+            val boxColor = if (isUnknown) Color.Red else Color.Green
+
             drawRect(
-                color = Color.Green,
+                color = boxColor,
                 topLeft = Offset(rect.left, rect.top),
                 size = Size(rect.width(), rect.height()),
                 style = Stroke(width = 4f)
             )
 
-            // Draw name label above the box
-            if (label != null) {
-                drawContext.canvas.nativeCanvas.drawText(
-                    label,
-                    rect.left,
-                    rect.top - 10f,
-                    textPaint
-                )
-            }
+            textPaint.color = if (isUnknown)
+                android.graphics.Color.RED else android.graphics.Color.GREEN
+
+            drawContext.canvas.nativeCanvas.drawText(
+                label ?: "Unknown",
+                rect.left,
+                rect.top - 10f,
+                textPaint
+            )
         }
     }
 }

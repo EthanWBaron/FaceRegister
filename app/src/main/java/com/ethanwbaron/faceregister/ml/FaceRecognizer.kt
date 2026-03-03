@@ -8,7 +8,7 @@ class FaceRecognizer {
     fun register(name: String, embedding: FloatArray) {
         registeredFaces[name] = embedding
     }
-    fun recognize(embedding: FloatArray, threshold: Float = 0.9f): Pair<String, Float>? {
+    fun recognize(embedding: FloatArray, threshold: Float = 0.3f): Pair<String, Float>? {
         var bestMatch: String? = null
         var bestDistance = Float.MAX_VALUE
 
@@ -22,7 +22,9 @@ class FaceRecognizer {
 
         return if (bestMatch != null && bestDistance < threshold) {
             Pair(bestMatch, bestDistance)
-        } else null
+        } else {
+            Pair("Unknown", bestDistance)
+        }
     }
 
     private fun cosineDistance(a: FloatArray, b: FloatArray): Float {

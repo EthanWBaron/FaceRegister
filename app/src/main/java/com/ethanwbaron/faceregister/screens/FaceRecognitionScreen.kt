@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,7 +28,6 @@ import com.ethanwbaron.faceregister.ml.FaceNetModel
 import com.ethanwbaron.faceregister.ml.FaceRecognizer
 import com.ethanwbaron.faceregister.ui.face.FaceOverlay
 import com.ethanwbaron.faceregister.utils.CameraPermissionHandler
-import com.ethanwbaron.faceregister.utils.cropFace
 import com.google.mlkit.vision.face.Face
 
 @Composable
@@ -37,14 +37,12 @@ fun FaceDetectionScreen() {
 
     // Detection state
     var results by remember { mutableStateOf(emptyList<Pair<Face, String?>>()) }
-    var imageWidth by remember { mutableStateOf(480) }
-    var imageHeight by remember { mutableStateOf(360) }
+    var imageWidth by remember { mutableIntStateOf(480) }
+    var imageHeight by remember { mutableIntStateOf(360) }
 
     // Registration state
     var nameInput by remember { mutableStateOf("") }
     var statusMessage by remember { mutableStateOf("") }
-    var pendingRegister by remember { mutableStateOf(false) }
-
     val processor = remember { FaceDetectorProcessor() }
     val faceNetModel = remember { FaceNetModel(context) }
     val recognizer = remember { FaceRecognizer() }
@@ -55,14 +53,6 @@ fun FaceDetectionScreen() {
             faceNetModel = faceNetModel,
             recognizer = recognizer,
             onResult = { detectedResults, imgWidth, imgHeight ->
-                // If register button was pressed, register the first face found
-                if (pendingRegister && nameInput.isNotBlank()) {
-                    val firstFace = detectedResults.firstOrNull()?.first
-                    if (firstFace != null) {
-                        // Re-crop and embed for registration
-                        // This is handled inside the analyzer via registerNext flag
-                    }
-                }
                 results = detectedResults
                 imageWidth = imgWidth
                 imageHeight = imgHeight
@@ -74,7 +64,6 @@ fun FaceDetectionScreen() {
         onPermissionGranted = {
             Box(modifier = Modifier.fillMaxSize()) {
 
-                // Camera + overlay
                 CameraPreview(analyzer)
                 FaceOverlay(
                     results = results,
@@ -83,21 +72,14 @@ fun FaceDetectionScreen() {
                     isFrontCamera = true
                 )
 
-                // Registration UI at the bottom
+                // Registration UI at the TOP
                 Column(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
+                        .align(Alignment.TopCenter)
                         .fillMaxWidth()
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (statusMessage.isNotBlank()) {
-                        Text(
-                            text = statusMessage,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                    }
-
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -117,7 +99,6 @@ fun FaceDetectionScreen() {
                                     statusMessage = "Enter a name first"
                                     return@Button
                                 }
-                                // Tell the analyzer to register the next detected face
                                 analyzer.registerNextFace(nameInput.trim()) { success ->
                                     statusMessage = if (success)
                                         "Registered: ${nameInput.trim()}"
@@ -129,6 +110,13 @@ fun FaceDetectionScreen() {
                         ) {
                             Text("Register")
                         }
+                    }
+
+                    if (statusMessage.isNotBlank()) {
+                        Text(
+                            text = statusMessage,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
                 }
             }
